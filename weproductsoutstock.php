@@ -61,17 +61,10 @@ class Weproductsoutstock extends Module
         $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG', 0);
 
         $helper->identifier = $this->identifier;
-        $helper->submit_action = 'submitWeproductcategoryModule';
+        $helper->submit_action = 'submitWeproductsoutstock';
         $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false)
             . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
-
-        //ToDo: ¿es necesario todo esto o dejar solo los valores? mirar en otros módulos
-        /* $helper->tpl_vars = array(
-            'fields_value' => $this->getConfigFormValues(),
-            'languages' => $this->context->language->id,
-            'id_language' => $this->context->language->id,
-        );*/
 
         return $helper->generateForm(array($this->getConfigForm()));
     }
@@ -94,7 +87,7 @@ class Weproductsoutstock extends Module
                             'root_category' => 2,
                             'id' => 'id_category',
                             'name' => 'name_category',
-                            'selected_categories' => array(0)
+                            'selected_categories' => $this->getConfigFormValues()
                         ),
                     ),
                 ),
@@ -105,7 +98,20 @@ class Weproductsoutstock extends Module
         );
     }
 
+    protected function getConfigFormValues()
+    {
+        return array(
+            'WEPRODUCTSOUTSTOCK_CATEGORY' => Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY'),
+        );
+    }
+
     protected function postProcess()
     {
+        $form_values = $this->getConfigFormValues();
+
+        foreach ($form_values as $key => $val) {
+            $val = Tools::getValue($key);
+            Configuration::updateValue($key, $val);
+        }
     }
 }
