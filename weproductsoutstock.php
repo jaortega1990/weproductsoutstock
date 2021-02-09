@@ -25,4 +25,24 @@ class Weproductsoutstock extends Module
 
         $this->ps_versions_compliancy = array('min' => '1.7', 'max' => _PS_VERSION_);
     }
+
+    public function install()
+    {
+        Configuration::updateValue('WEPRODUCTSOUTSTOCK_CATEGORY', 0);
+
+        return parent::install() &&
+            $this->registerHook('actionProducUpdate');
+    }
+
+    public function uninstall()
+    {
+        Configuration::deleteByName('WEPRODUCTSOUTSTOCK_CATEGORY');
+
+        return parent::uninstall();
+    }
+
+    public function getContent()
+    {
+        return 'ola k ase';
+    }
 }
