@@ -43,6 +43,69 @@ class Weproductsoutstock extends Module
 
     public function getContent()
     {
-        return 'ola k ase';
+        if ((bool) Tools::isSubmit('submitWeproductsoutstock') == true) {
+            $this->postProcess();
+        }
+
+        return $this->renderForm();
+    }
+
+    public function renderForm()
+    {
+        $helper = new HelperForm();
+
+        $helper->show_toolbar = false;
+        $helper->table = $this->table;
+        $helper->module = $this;
+        $helper->default_form_language = $this->context->language->id;
+        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG', 0);
+
+        $helper->identifier = $this->identifier;
+        $helper->submit_action = 'submitWeproductcategoryModule';
+        $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false)
+            . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name;
+        $helper->token = Tools::getAdminTokenLite('AdminModules');
+
+        //ToDo: ¿es necesario todo esto o dejar solo los valores? mirar en otros módulos
+        /* $helper->tpl_vars = array(
+            'fields_value' => $this->getConfigFormValues(),
+            'languages' => $this->context->language->id,
+            'id_language' => $this->context->language->id,
+        );*/
+
+        return $helper->generateForm(array($this->getConfigForm()));
+    }
+
+    protected function getConfigForm()
+    {
+        return array(
+            'form' => array(
+                'legend' => array(
+                    'title' => $this->l('Settings'),
+                    'icon' => 'icon-cogs',
+                ),
+                'input' => array(
+                    array(
+                        'type' => 'categories',
+                        'label' => $this->l('Tree categories'),
+                        'desc' => $this->l('Select the category where the products without stock will be associated'),
+                        'name' => 'WEPRODUCTSOUTSTOCK_CATEGORY',
+                        'tree' => array(
+                            'root_category' => 2,
+                            'id' => 'id_category',
+                            'name' => 'name_category',
+                            'selected_categories' => array(0)
+                        ),
+                    ),
+                ),
+                'submit' => array(
+                    'title' => $this->l('Save'),
+                ),
+            ),
+        );
+    }
+
+    protected function postProcess()
+    {
     }
 }
