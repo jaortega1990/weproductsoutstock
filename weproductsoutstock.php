@@ -131,8 +131,12 @@ class Weproductsoutstock extends Module
 
             if($productIsAssociated && $product_stock > 0) {
                 $product->deleteCategory($category);
+                $product->visibility = 'both';
+                $product->update();
             }elseif(!$productIsAssociated && $product_stock == 0) {
                 $product->addToCategories(array($category));
+                $product->visibility = 'none';
+                $product->update();
             }
         }
     }
