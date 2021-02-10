@@ -31,7 +31,8 @@ class Weproductsoutstock extends Module
         Configuration::updateValue('WEPRODUCTSOUTSTOCK_CATEGORY', 0);
 
         return parent::install() &&
-            $this->registerHook('actionProductUpdate');
+            $this->registerHook('actionProductUpdate') &&
+            $this->registerHook('actionUpdateQuantity');
     }
 
     public function uninstall()
@@ -118,6 +119,35 @@ class Weproductsoutstock extends Module
     public function hookActionProductUpdate($params)
     {
         $category = Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
+
+        if ($category != 0) {
+            $id_product = $params['id_product'];
+
+            $product_stock = Product::getRealQuantity($id_product);
+            $product_categories = Product::getProductCategories($id_product);
+            
+            $productIsAssociated = in_array($category, $product_categories);
+
+            $product = new Product($id_product);
+
+            if($productIsAssociated && $product_stock > 0) {
+                $product->deleteCategory($category);
+                $product->visibility = 'both';
+                $product->update();
+            }elseif(!$productIsAssociated && $product_stock == 0) {
+                $product->addToCategories(array($category));
+                $product->visibility = 'none';
+                $product->update();
+            }
+        }
+    }
+
+    public function hookActionUpdateQuantity($params)
+    {
+        // Aquí también llega $params['id_product']
+       //$this->hookActionProductUpdate($params);
+
+       $category = Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
 
         if ($category != 0) {
             $id_product = $params['id_product'];
