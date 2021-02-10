@@ -145,9 +145,9 @@ class Weproductsoutstock extends Module
     public function hookActionUpdateQuantity($params)
     {
         // Aquí también llega $params['id_product']
-       //$this->hookActionProductUpdate($params);
+       $this->hookActionProductUpdate($params);
 
-       $category = Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
+    /*   $category = Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
 
         if ($category != 0) {
             $id_product = $params['id_product'];
@@ -169,5 +169,9 @@ class Weproductsoutstock extends Module
                 $product->update();
             }
         }
+
+        dump($params);
+        dump($params['id_product']);
+        die();*/
     }
 }
