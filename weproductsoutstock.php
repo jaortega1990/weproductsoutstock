@@ -31,7 +31,7 @@ class Weproductsoutstock extends Module
         Configuration::updateValue('WEPRODUCTSOUTSTOCK_CATEGORY', 0);
 
         return parent::install() &&
-            $this->registerHook('actionProducUpdate');
+            $this->registerHook('actionProductUpdate');
     }
 
     public function uninstall()
@@ -112,6 +112,28 @@ class Weproductsoutstock extends Module
         foreach ($form_values as $key => $val) {
             $val = Tools::getValue($key);
             Configuration::updateValue($key, $val);
+        }
+    }
+
+    public function hookActionProductUpdate($params)
+    {
+        $category = Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
+
+        if ($category != 0) {
+            $id_product = $params['id_product'];
+
+            $product_stock = Product::getRealQuantity($id_product);
+            $product_categories = Product::getProductCategories($id_product);
+            
+            $productIsAssociated = in_array($category, $product_categories);
+
+            $product = new Product($id_product);
+
+            if($productIsAssociated && $product_stock > 0) {
+                $product->deleteCategory($category);
+            }elseif(!$productIsAssociated && $product_stock == 0) {
+                $product->addToCategories(array($category));
+            }
         }
     }
 }
