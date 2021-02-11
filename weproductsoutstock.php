@@ -32,7 +32,8 @@ class Weproductsoutstock extends Module
 
         return parent::install() &&
             $this->registerHook('actionProductUpdate') &&
-            $this->registerHook('actionUpdateQuantity');
+            $this->registerHook('actionUpdateQuantity') &&
+            $this->registerHook('actionValidateOrder');
     }
 
     public function uninstall()
@@ -118,7 +119,7 @@ class Weproductsoutstock extends Module
 
     public function hookActionProductUpdate($params)
     {
-        $category = Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
+        $category = (int) Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
 
         if ($category != 0) {
             $id_product = $params['id_product'];
@@ -127,7 +128,7 @@ class Weproductsoutstock extends Module
             $product_categories = Product::getProductCategories($id_product);
             
             $productIsAssociated = in_array($category, $product_categories);
-
+            
             $product = new Product($id_product);
 
             if($productIsAssociated && $product_stock > 0) {
@@ -144,34 +145,16 @@ class Weproductsoutstock extends Module
 
     public function hookActionUpdateQuantity($params)
     {
+       
         // Aquí también llega $params['id_product']
-       $this->hookActionProductUpdate($params);
+        //$this->hookActionProductUpdate($params);
+    }
 
-    /*   $category = Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
-
-        if ($category != 0) {
-            $id_product = $params['id_product'];
-
-            $product_stock = Product::getRealQuantity($id_product);
-            $product_categories = Product::getProductCategories($id_product);
-            
-            $productIsAssociated = in_array($category, $product_categories);
-
-            $product = new Product($id_product);
-
-            if($productIsAssociated && $product_stock > 0) {
-                $product->deleteCategory($category);
-                $product->visibility = 'both';
-                $product->update();
-            }elseif(!$productIsAssociated && $product_stock == 0) {
-                $product->addToCategories(array($category));
-                $product->visibility = 'none';
-                $product->update();
-            }
-        }
-
-        dump($params);
-        dump($params['id_product']);
+    public function hookActionValidateOrder($params)
+    {
+       /* dump($params);
         die();*/
+        // Aquí también llega $params['id_product']
+        //$this->hookActionProductUpdate($params);
     }
 }
