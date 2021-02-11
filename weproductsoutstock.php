@@ -32,7 +32,6 @@ class Weproductsoutstock extends Module
 
         return parent::install() &&
             $this->registerHook('actionProductUpdate') &&
-            $this->registerHook('actionUpdateQuantity') &&
             $this->registerHook('actionValidateOrder');
     }
 
@@ -126,16 +125,16 @@ class Weproductsoutstock extends Module
 
             $product_stock = Product::getRealQuantity($id_product);
             $product_categories = Product::getProductCategories($id_product);
-            
+
             $productIsAssociated = in_array($category, $product_categories);
-            
+
             $product = new Product($id_product);
 
-            if($productIsAssociated && $product_stock > 0) {
+            if ($productIsAssociated && $product_stock > 0) {
                 $product->deleteCategory($category);
                 $product->visibility = 'both';
                 $product->update();
-            }elseif(!$productIsAssociated && $product_stock == 0) {
+            } elseif (!$productIsAssociated && $product_stock == 0) {
                 $product->addToCategories(array($category));
                 $product->visibility = 'none';
                 $product->update();
@@ -143,18 +142,12 @@ class Weproductsoutstock extends Module
         }
     }
 
-    public function hookActionUpdateQuantity($params)
-    {
-       
-        // Aquí también llega $params['id_product']
-        //$this->hookActionProductUpdate($params);
-    }
-
     public function hookActionValidateOrder($params)
     {
-       /* dump($params);
-        die();*/
-        // Aquí también llega $params['id_product']
-        //$this->hookActionProductUpdate($params);
+        $products = $params['order']->product_list;
+
+        foreach ($products as $product) {
+            $this->hookActionProductUpdate($product);
+        }
     }
 }
