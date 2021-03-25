@@ -29,15 +29,18 @@ class Weproductsoutstock extends Module
     public function install()
     {
         Configuration::updateValue('WEPRODUCTSOUTSTOCK_CATEGORY', 0);
+        Configuration::updateValue('WEPRODUCTSOUTSTOCK_KEEPCATEGORIES', 1);
 
         return parent::install() &&
             $this->registerHook('actionProductUpdate') &&
-            $this->registerHook('actionValidateOrder');
+            $this->registerHook('actionValidateOrder') &&
+            $this->registerHook('actionUpdateQuantity');
     }
 
     public function uninstall()
     {
         Configuration::deleteByName('WEPRODUCTSOUTSTOCK_CATEGORY');
+        Configuration::deleteByName('WEPRODUCTSOUTSTOCK_KEEPCATEGORIES');
 
         return parent::uninstall();
     }
@@ -67,6 +70,11 @@ class Weproductsoutstock extends Module
             . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
 
+        $helper->tpl_vars = array(
+            'fields_value' => $this->getConfigFormValues(),
+            'id_language' => $this->context->language->id
+        );
+
         return $helper->generateForm(array($this->getConfigForm()));
     }
 
@@ -91,6 +99,25 @@ class Weproductsoutstock extends Module
                             'selected_categories' => $this->getConfigFormValues()
                         ),
                     ),
+                    array(
+                        'type' => 'switch',
+                        'label' => $this->l('Keep categories'),
+                        'desc' => $this->l('Keep categories when product runs out of stock'),
+                        'name' => 'WEPRODUCTSOUTSTOCK_KEEPCATEGORIES',
+                        'is_bool' => true,
+                        'values' => array(
+                            array(
+                                'id' => 'WEPRODUCTSOUTSTOCK_KEEPCATEGORIES_on',
+                                'value' => 1,
+                                'label' => $this->l('Yes'),
+                            ),
+                            array(
+                                'id' => 'WEPRODUCTSOUTSTOCK_KEEPCATEGORIES_off',
+                                'value' => 0,
+                                'label' => $this->l('No'),
+                            )
+                        ),
+                    ),
                 ),
                 'submit' => array(
                     'title' => $this->l('Save'),
@@ -103,6 +130,7 @@ class Weproductsoutstock extends Module
     {
         return array(
             'WEPRODUCTSOUTSTOCK_CATEGORY' => Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY'),
+            'WEPRODUCTSOUTSTOCK_KEEPCATEGORIES' => Configuration::get('WEPRODUCTSOUTSTOCK_KEEPCATEGORIES'),
         );
     }
 
@@ -119,6 +147,7 @@ class Weproductsoutstock extends Module
     public function hookActionProductUpdate($params)
     {
         $category = (int) Configuration::get('WEPRODUCTSOUTSTOCK_CATEGORY');
+        $keepCat = (int) Configuration::get('WEPRODUCTSOUTSTOCK_KEEPCATEGORIES');
 
         if ($category != 0) {
             $id_product = $params['id_product'];
@@ -131,11 +160,22 @@ class Weproductsoutstock extends Module
             $product = new Product($id_product);
 
             if ($productIsAssociated && $product_stock > 0) {
-                $product->deleteCategory($category);
-                $product->visibility = 'both';
-                $product->update();
+                // Si mantener las categorías es SI (=1) entonces si podemos borrar la asociación de SIN STOCK.
+                if ($keepCat == 1) {
+                    $product->deleteCategory($category);
+                    $product->visibility = 'both';
+                    $product->update();
+                }
             } elseif (!$productIsAssociated && $product_stock == 0) {
+                // Asociamos a la categoría puesta en la configuración y después borramos una a una las otras asociaciones (si no hay que mantenerlas).
                 $product->addToCategories(array($category));
+                if ($keepCat == 0) {
+                    foreach ($product_categories as $id_category) {
+                        $product->deleteCategory($id_category);
+                    }
+                    $product->id_category_default = $category;
+                }
+
                 $product->visibility = 'none';
                 $product->update();
             }
@@ -149,5 +189,10 @@ class Weproductsoutstock extends Module
         foreach ($products as $product) {
             $this->hookActionProductUpdate($product);
         }
+    }
+
+    public function hookActionUpdateQuantity($params)
+    {
+        $this->hookActionProductUpdate($params);
     }
 }
